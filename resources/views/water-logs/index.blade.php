@@ -13,8 +13,11 @@
             Catat Parameter Air Baru
             <span class="text-xs text-gray-500 font-sans normal-case font-normal ml-2">(14 parameter lengkap sesuai model prediksi)</span>
         </h3>
-        <form action="{{ route('water-logs.store') }}" method="POST" class="space-y-5">
+        <form id="waterLogForm" action="{{ route('water-logs.store') }}" method="POST" class="space-y-5">
             @csrf
+            
+            <div id="errorContainer" class="hidden text-rose-400 text-xs bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg mb-4">
+            </div>
 
             <div>
                 <label for="pond_id" class="block text-gray-400 text-xs font-semibold mb-1.5 uppercase tracking-wider">Pilih Kolam</label>
@@ -122,11 +125,61 @@
                 </div>
             </div>
 
-            <button type="submit" class="bg-gold hover:bg-gold-hover text-obsidian font-bold py-3 px-8 rounded-lg transition-all text-sm flex items-center justify-center gap-2 shadow-lg">
+            <button type="submit" id="btnSubmit" class="bg-gold hover:bg-gold-hover text-obsidian font-bold py-3 px-8 rounded-lg transition-all text-sm flex items-center justify-center gap-2 shadow-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 Kirim & Analisis
             </button>
         </form>
+
+<script>
+    document.getElementById('waterLogForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnSubmit');
+        const errorContainer = document.getElementById('errorContainer');
+        
+        btn.disabled = true;
+        errorContainer.classList.add('hidden');
+
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => {
+            if (res.ok) {
+                window.location.reload(); // Reload on success
+                return;
+            }
+            if (res.status === 422) {
+                return res.json().then(data => { throw data; });
+            }
+            throw new Error('Server error');
+        })
+        .catch(err => {
+            btn.disabled = false;
+            
+            if (err.errors) {
+                errorContainer.classList.remove('hidden');
+                let errorHtml = '<strong>Periksa kembali input anda:</strong><ul class="list-disc list-inside mt-2">';
+                Object.values(err.errors).forEach(messages => {
+                    messages.forEach(msg => {
+                        errorHtml += `<li>${msg}</li>`;
+                    });
+                });
+                errorHtml += '</ul>';
+                errorContainer.innerHTML = errorHtml;
+            } else {
+                alert("Terjadi kesalahan: " + (err.message || "Gagal memproses analisis."));
+            }
+        });
+    });
+</script>
     </div>
 
     <!-- Filter, Search & Sort -->

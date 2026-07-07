@@ -11,10 +11,10 @@ app = FastAPI(title="AquaPredict Analysis Service", version="1.1.0")
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], #Menentukan siapa saja yang diizinkan mengakses API
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"], #Mengizinkan semua metode HTTP (GET, POST, PUT, DELETE)
+    allow_headers=["*"], #Mengizinkan semua header HTTP
 )
 
 class AnalysisRequest(BaseModel):

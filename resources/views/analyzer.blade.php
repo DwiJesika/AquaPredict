@@ -96,6 +96,9 @@
                     </div>
                 </div>
 
+                <div id="errorContainer" class="hidden text-rose-400 text-xs bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg mb-4">
+                </div>
+
                 <button type="submit" id="btnSubmit" class="w-full bg-gold hover:bg-gold-hover text-obsidian font-bold py-3 px-4 rounded-lg transition-all gold-glow text-sm">
                     Mulai Analisis
                 </button>
@@ -148,12 +151,14 @@
         const loading = document.getElementById('outputLoading');
         const placeholder = document.getElementById('outputPlaceholder');
         const content = document.getElementById('outputContent');
+        const errorContainer = document.getElementById('errorContainer');
         const outStatus = document.getElementById('outputStatus');
         const outRecs = document.getElementById('outputRecs');
 
         btn.disabled = true;
         placeholder.classList.add('hidden');
         content.classList.add('hidden');
+        errorContainer.classList.add('hidden');
         loading.classList.remove('hidden');
 
         const formData = new FormData(this);
@@ -165,7 +170,15 @@
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                if (res.status === 422) {
+                    return res.json().then(data => { throw data; });
+                }
+                throw new Error('Server error');
+            }
+            return res.json();
+        })
         .then(data => {
             loading.classList.add('hidden');
             content.classList.remove('hidden');
@@ -187,10 +200,24 @@
             btn.disabled = false;
         })
         .catch(err => {
+            console.error('Fetch error:', err);
             loading.classList.add('hidden');
-            placeholder.classList.remove('hidden');
-            placeholder.textContent = "Terjadi kesalahan koneksi saat memproses analisis.";
             btn.disabled = false;
+            
+            if (err.errors) {
+                errorContainer.classList.remove('hidden');
+                let errorHtml = '<strong>Periksa kembali input anda:</strong><ul class="list-disc list-inside mt-2">';
+                Object.values(err.errors).forEach(messages => {
+                    messages.forEach(msg => {
+                        errorHtml += `<li>${msg}</li>`;
+                    });
+                });
+                errorHtml += '</ul>';
+                errorContainer.innerHTML = errorHtml;
+            } else {
+                placeholder.classList.remove('hidden');
+                placeholder.textContent = "Terjadi kesalahan: " + (err.message || "Gagal memproses analisis.");
+            }
         });
     });
 </script>
